@@ -1,5 +1,7 @@
 import streamlit as st
 import pickle
+import re
+from googletrans import Translator
 
 
 def load_model():
@@ -12,32 +14,18 @@ def load_model():
     return model, vectorizer, label_encoder
 
 model, vectorizer, label_encoder = load_model()
+translator = Translator()
 
 
-st.set_page_config(page_title="Complaint Classifier", layout="centered")
+st.set_page_config(page_title="Bank Complaint Classifier", page_icon="🔎", layout="wide")
 
-
+# Styling
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
-
     html, body, [class*="css"]  {
-        font-family: 'Roboto', sans-serif;
+        font-family: 'Segoe UI', sans-serif;
         background-color: #e6f2ff;
         color: #1a1a1a;
-    }
-    h1 {
-        color: #004080;
-        text-align: center;
-        font-size: 42px;
-        margin-bottom: 30px;
-    }
-    .stTextInput>div>div>input, .stTextArea>div>textarea {
-        background-color: #ffffff;
-        border: 1px solid #99c2ff;
-        border-radius: 8px;
-        padding: 10px;
-        font-size: 16px;
     }
     .stButton>button {
         background-color: #004080;
@@ -52,10 +40,6 @@ st.markdown("""
     .stButton>button:hover {
         background-color: #0066cc;
     }
-    .stMarkdown h4 {
-        color: #004080;
-        margin-top: 20px;
-    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -63,23 +47,68 @@ st.markdown("""
 with st.sidebar:
     st.markdown("### 📌 Instructions")
     st.write("""
-    - Paste your complaint in the box.
-    - Click **Classify** to see the predicted category.
-    - Make sure models are loaded.
+    - Enter your complaint in **any language**.
+    - The app auto-translates and classifies it.
+    - Make sure it's a real issue, not polite text.
     """)
 
 
-st.markdown("<h1>🔍 Complaint Category Classifier</h1>", unsafe_allow_html=True)
+st.markdown("<h3 style='color: navy;'>🏦 Bank Complaint Classifier (Multilingual)</h3>", unsafe_allow_html=True)
 
 
 complaint_text = st.text_area("📝 Enter your complaint text below:", height=180)
 
+# Strong validation function
+def is_invalid_input(text):
+    text = text.strip()
+    if len(text) < 5:
+        return True, "❗ Complaint is too short."
 
+    if re.fullmatch(r'[^a-zA-Z0-9\s]+', text) or re.fullmatch(r'(.)\\1{3,}', text):
+        return True, "❗ Complaint looks like gibberish."
+
+    try:
+        detected_lang = translator.detect(text).lang
+    except Exception:
+        return True, "❗ Unable to detect language."
+
+    # If English, check for complaint-related keywords
+    if detected_lang == 'en':
+        complaint_keywords = [
+            'not', 'unable', 'issue', 'problem', 'complaint',
+            'error', 'fail', 'decline', 'blocked', 'refund', 'charged', 'wrong', 'missing', 'late','money', 'service', 'support', 
+        ]
+        if not any(word in text.lower() for word in complaint_keywords):
+            return True, "❗ This doesn't appear to describe a complaint. Please describe the issue clearly."
+
+    return False, ""
+
+# Classify button
 if st.button("Classify"):
     if complaint_text.strip() == "":
         st.warning("Please enter a complaint first.")
     else:
-        X = vectorizer.transform([complaint_text])
-        pred = model.predict(X)
-        label = label_encoder.inverse_transform([pred[0]])[0]
-        st.success(f"✅ **Predicted Category:** {label}")
+        # Validate input
+        is_invalid, reason = is_invalid_input(complaint_text)
+        if is_invalid:
+            st.warning(reason)
+        else:
+            try:
+                # Translate to English if needed
+                translated = translator.translate(complaint_text, dest='en')
+                translated_text = translated.text.strip()
+                detected_lang = translated.src
+
+                st.markdown(f"🌐 Detected Language: `{detected_lang.upper()}`")
+                if detected_lang != 'en':
+                    st.markdown("🔁 **Translated Complaint:**")
+                    st.info(translated_text)
+
+                # Predict
+                X = vectorizer.transform([translated_text])
+                pred = model.predict(X)
+                label = label_encoder.inverse_transform([pred[0]])[0]
+                st.success(f"✅ **Predicted Category:** {label}")
+
+            except Exception as e:
+                st.error(f"Prediction failed: {e}")

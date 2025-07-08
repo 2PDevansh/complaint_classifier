@@ -1,18 +1,18 @@
 # 🏦 Bank Complaint Classifier (Multilingual)
 
-This is a Streamlit-based web app that classifies customer complaints related to **banking and finance** into specific categories using a trained machine learning model.
+This web application, developed using Streamlit, is designed to categorize customer complaints pertaining to **banking and finance** into distinct classifications through the utilization of a trained machine learning model.
 
-🔍 It supports **multilingual input** via automatic translation and filters out invalid or non-financial complaints.
+🔍 It accommodates **multilingual input** by employing automatic translation and effectively filters out invalid or non-financial complaints.
 
 ---
 
 ## 📌 Features
 
-- ✅ Classifies financial complaints into predefined categories
-- 🌍 Supports input in multiple languages (auto-translated to English)
-- 🛡️ Detects gibberish, irrelevant, or non-financial text
-- 📊 Built with Scikit-learn + Naive Bayes
-- ⚡ Fast UI with Streamlit
+- ✅ Categorizes financial complaints into established classifications
+- 🌍 Accepts input in various languages (automatically translated to English)
+- 🛡️ Identifies gibberish, irrelevant, or non-financial content
+- 📊 Developed with Scikit-learn and Naive Bayes
+- ⚡ Rapid user interface powered by Streamlit
 
 ## 🧠 Model Information
 
